@@ -1,5 +1,7 @@
 package vn.nguyendong.jobhunter.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,31 +23,47 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/user")
-    public List<User> fetchAllUsers() {
-        return this.userService.fetchAllUsers();
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> fetchAllUsers() {
+        // cách 1
+        return ResponseEntity.status(HttpStatus.OK).body(this.userService.fetchAllUsers());
+
+        // cách 2
+        // return ResponseEntity.ok(this.userService.fetchAllUsers());
     }
 
-    @GetMapping("/user/{id}")
-    public User fetchUserById(@PathVariable("id") long id) {
-        return this.userService.fetchUserById(id);
+    @GetMapping("/users/{id}")
+    public ResponseEntity<User> fetchUserById(@PathVariable("id") long id) {
+        // cách 1
+        return ResponseEntity.status(HttpStatus.OK).body(this.userService.fetchUserById(id));
+
+        // cách 2
+        // return ResponseEntity.ok(this.userService.fetchUserById(id));
     }
 
-    @PostMapping("/user")
-    public User createNewUser(@RequestBody User user) {
-
-        User user2 = this.userService.handleCreateUser(user);
-
-        return user2;
+    @PostMapping("/users")
+    public ResponseEntity<User> createNewUser(@RequestBody User user) {
+        User createdUser = this.userService.handleCreateUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
-    @PutMapping("/user")
-    public User updateUser(@RequestBody User user) {
-        return this.userService.handleUpdateUser(user);
+    @PutMapping("/users")
+    public ResponseEntity<User> updateUser(@RequestBody User user) {
+        // cách 1
+        return ResponseEntity.status(HttpStatus.OK).body(this.userService.handleUpdateUser(user));
+
+        // cách 2
+        // return ResponseEntity.ok(this.userService.handleUpdateUser(user));
     }
 
-    @DeleteMapping("/user/{id}")
-    public void deleteUser(@PathVariable("id") long id) {
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable("id") long id) {
         this.userService.handleDeleteUser(id);
+
+        // cách 1
+        return ResponseEntity.status(HttpStatus.OK).body("User deleted successfully");
+
+        // cách 2
+        // return ResponseEntity.ok("User deleted successfully");
     }
 }
