@@ -58,11 +58,6 @@ public class UserController {
         // return ResponseEntity.ok(this.userService.handleUpdateUser(user));
     }
 
-    @ExceptionHandler(value = IdInvalidException.class)
-    public ResponseEntity<String> handleIdException(IdInvalidException idInvalidException) {
-        return ResponseEntity.badRequest().body(idInvalidException.getMessage());
-    }
-
     @DeleteMapping("/users/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable("id") long id) throws IdInvalidException {
         this.userService.handleDeleteUser(id);
