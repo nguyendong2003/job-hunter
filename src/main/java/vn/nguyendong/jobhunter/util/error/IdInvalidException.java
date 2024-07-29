@@ -1,4 +1,4 @@
-package vn.nguyendong.jobhunter.service.error;
+package vn.nguyendong.jobhunter.util.error;
 
 public class IdInvalidException extends Exception {
     public IdInvalidException(String message) {

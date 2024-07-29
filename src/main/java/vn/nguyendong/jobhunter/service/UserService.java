@@ -29,6 +29,10 @@ public class UserService {
         // return null;
     }
 
+    public User handleGetUserByUsername(String username) {
+        return this.userRepository.findByEmail(username);
+    }
+
     public User handleCreateUser(User user) {
         return this.userRepository.save(user);
     }
