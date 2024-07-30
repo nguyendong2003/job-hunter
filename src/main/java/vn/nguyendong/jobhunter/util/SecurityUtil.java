@@ -45,6 +45,8 @@ public class SecurityUtil {
          * Trong JSON Web Token (JWT), "claims" là các thông tin được mã hóa bên trong
          * token. Các claims này chứa các thông tin về người dùng và các quyền hạn của
          * họ.
+         * 
+         * Phần này là body của token
          */
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now) // Thời gian phát hành token
