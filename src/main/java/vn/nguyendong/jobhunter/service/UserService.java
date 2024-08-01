@@ -7,11 +7,15 @@ import org.springframework.stereotype.Service;
 
 import vn.nguyendong.jobhunter.domain.User;
 import vn.nguyendong.jobhunter.domain.dto.Meta;
+import vn.nguyendong.jobhunter.domain.dto.ResponseCreateUserDTO;
+import vn.nguyendong.jobhunter.domain.dto.ResponseUpdateUserDTO;
+import vn.nguyendong.jobhunter.domain.dto.ResponseUserDTO;
 import vn.nguyendong.jobhunter.domain.dto.ResultPaginationDTO;
 import vn.nguyendong.jobhunter.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -34,6 +38,22 @@ public class UserService {
 
         rs.setMeta(mt);
         rs.setResult(pageUser.getContent());
+
+        // remove sensitive data
+        // data trả về không chứa thông tin mật khẩu, refresh token của người dùng)
+        List<ResponseUserDTO> listUser = pageUser.getContent()
+                .stream().map(item -> new ResponseUserDTO(
+                        item.getId(),
+                        item.getEmail(),
+                        item.getName(),
+                        item.getGender(),
+                        item.getAddress(),
+                        item.getAge(),
+                        item.getUpdatedAt(),
+                        item.getCreatedAt()))
+                .collect(Collectors.toList());
+
+        rs.setResult(listUser);
 
         return rs;
     }
@@ -58,9 +78,10 @@ public class UserService {
     public User handleUpdateUser(User user) {
         User currentUser = this.fetchUserById(user.getId());
         if (currentUser != null) {
+            currentUser.setAddress(user.getAddress());
+            currentUser.setGender(user.getGender());
+            currentUser.setAge(user.getAge());
             currentUser.setName(user.getName());
-            currentUser.setEmail(user.getEmail());
-            currentUser.setPassword(user.getPassword());
 
             currentUser = this.userRepository.save(currentUser);
         }
@@ -69,5 +90,46 @@ public class UserService {
 
     public void handleDeleteUser(long id) {
         this.userRepository.deleteById(id);
+    }
+
+    public boolean isEmailExists(String email) {
+        return this.userRepository.existsByEmail(email);
+    }
+
+    public ResponseCreateUserDTO convertToResponseCreateUserDTO(User user) {
+        ResponseCreateUserDTO res = new ResponseCreateUserDTO();
+        res.setId(user.getId());
+        res.setName(user.getName());
+        res.setEmail(user.getEmail());
+        res.setGender(user.getGender());
+        res.setAddress(user.getAddress());
+        res.setAge(user.getAge());
+        res.setCreatedAt(user.getCreatedAt());
+        return res;
+    }
+
+    public ResponseUpdateUserDTO convertToResponseUpdateUserDTO(User user) {
+        ResponseUpdateUserDTO res = new ResponseUpdateUserDTO();
+        res.setId(user.getId());
+        res.setName(user.getName());
+        res.setGender(user.getGender());
+        res.setAddress(user.getAddress());
+        res.setAge(user.getAge());
+        res.setUpdatedAt(user.getUpdatedAt());
+        return res;
+
+    }
+
+    public ResponseUserDTO convertToResponseUserDTO(User user) {
+        ResponseUserDTO res = new ResponseUserDTO();
+        res.setId(user.getId());
+        res.setEmail(user.getEmail());
+        res.setName(user.getName());
+        res.setGender(user.getGender());
+        res.setAddress(user.getAddress());
+        res.setAge(user.getAge());
+        res.setCreatedAt(user.getCreatedAt());
+        res.setUpdatedAt(user.getUpdatedAt());
+        return res;
     }
 }

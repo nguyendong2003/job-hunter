@@ -99,7 +99,7 @@ public class SecurityConfiguration {
                 .csrf(c -> c.disable())
                 .cors(Customizer.withDefaults()) // cấu hình cors mặc định
                 .authorizeHttpRequests((authz) -> authz
-                        .requestMatchers("/", "/login").permitAll()
+                        .requestMatchers("/", "/api/v1/login").permitAll()
                         .anyRequest().authenticated())
 
                 /*
