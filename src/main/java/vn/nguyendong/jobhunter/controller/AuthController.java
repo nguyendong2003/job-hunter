@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import vn.nguyendong.jobhunter.domain.User;
 import vn.nguyendong.jobhunter.domain.dto.LoginDTO;
 import vn.nguyendong.jobhunter.domain.dto.ResponseLoginDTO;
+import vn.nguyendong.jobhunter.domain.dto.ResponseLoginDTO.UserLogin;
+import vn.nguyendong.jobhunter.service.UserService;
 import vn.nguyendong.jobhunter.util.SecurityUtil;
 
 @RestController
@@ -21,10 +24,13 @@ public class AuthController {
 
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
+    private final UserService userService;
 
-    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil) {
+    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil,
+            UserService userService) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.securityUtil = securityUtil;
+        this.userService = userService;
     }
 
     /*
@@ -49,10 +55,20 @@ public class AuthController {
         // Save data to Security Context
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        //
+        // set data to response
         ResponseLoginDTO res = new ResponseLoginDTO();
         res.setAccessToken(accessToken);
 
+        User currentUserDB = this.userService.handleGetUserByUsername(loginDTO.getUsername());
+        if (currentUserDB != null) {
+            ResponseLoginDTO.UserLogin user = new ResponseLoginDTO.UserLogin(
+                    currentUserDB.getId(),
+                    currentUserDB.getEmail(),
+                    currentUserDB.getName());
+            res.setUser(user);
+        }
+
+        //
         return ResponseEntity.ok().body(res);
     }
 }
