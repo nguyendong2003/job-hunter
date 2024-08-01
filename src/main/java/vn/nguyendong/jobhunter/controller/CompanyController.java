@@ -2,10 +2,15 @@ package vn.nguyendong.jobhunter.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.turkraft.springfilter.boot.Filter;
+
 import jakarta.validation.Valid;
 import vn.nguyendong.jobhunter.domain.Company;
+import vn.nguyendong.jobhunter.domain.dto.ResultPaginationDTO;
 import vn.nguyendong.jobhunter.service.CompanyService;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,9 +43,10 @@ public class CompanyController {
     }
 
     @GetMapping("/companies")
-    public ResponseEntity<List<Company>> getCompanies() {
-        List<Company> companies = this.companyService.handleGetCompanies();
-        return ResponseEntity.ok(companies);
+    public ResponseEntity<ResultPaginationDTO> getCompanies(
+            @Filter Specification<Company> spec,
+            Pageable pageable) {
+        return ResponseEntity.ok(this.companyService.handleGetCompanies(spec, pageable));
     }
 
     @PutMapping("/companies")

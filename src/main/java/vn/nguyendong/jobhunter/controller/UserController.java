@@ -1,7 +1,7 @@
 package vn.nguyendong.jobhunter.controller;
 
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,8 +11,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.turkraft.springfilter.boot.Filter;
 
 import vn.nguyendong.jobhunter.domain.User;
 import vn.nguyendong.jobhunter.domain.dto.ResultPaginationDTO;
@@ -31,15 +32,16 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /*
+     * https://docs.spring.io/spring-data/rest/reference/paging-and-sorting.html
+     * 
+     */
     @GetMapping("/users")
     public ResponseEntity<ResultPaginationDTO> fetchAllUsers(
-            @RequestParam(value = "current", defaultValue = "1") Integer currentPage,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
-
-        Pageable pageable = PageRequest.of(currentPage - 1, pageSize);
-
+            @Filter Specification<User> spec,
+            Pageable pageable) {
         // cách 1
-        return ResponseEntity.status(HttpStatus.OK).body(this.userService.fetchAllUsers(pageable));
+        return ResponseEntity.status(HttpStatus.OK).body(this.userService.fetchAllUsers(spec, pageable));
 
         // cách 2
         // return ResponseEntity.ok(this.userService.fetchAllUsers());

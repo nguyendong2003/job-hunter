@@ -1,8 +1,13 @@
 package vn.nguyendong.jobhunter.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import vn.nguyendong.jobhunter.domain.Company;
+import vn.nguyendong.jobhunter.domain.dto.Meta;
+import vn.nguyendong.jobhunter.domain.dto.ResultPaginationDTO;
 import vn.nguyendong.jobhunter.repository.CompanyRepository;
 
 import java.util.List;
@@ -20,8 +25,21 @@ public class CompanyService {
         return this.companyRepository.save(company);
     }
 
-    public List<Company> handleGetCompanies() {
-        return this.companyRepository.findAll();
+    public ResultPaginationDTO handleGetCompanies(Specification<Company> spec, Pageable pageable) {
+        Page<Company> pageCompanies = this.companyRepository.findAll(spec, pageable);
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        Meta mt = new Meta();
+
+        mt.setPage(pageable.getPageNumber() + 1);
+        mt.setPageSize(pageable.getPageSize());
+
+        mt.setPages(pageCompanies.getTotalPages());
+        mt.setTotal(pageCompanies.getTotalElements());
+
+        rs.setMeta(mt);
+        rs.setResult(pageCompanies.getContent());
+
+        return rs;
     }
 
     public Company handleUpdateCompany(Company company) {
