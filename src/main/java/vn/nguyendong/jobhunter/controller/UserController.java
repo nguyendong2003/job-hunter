@@ -18,6 +18,7 @@ import com.turkraft.springfilter.boot.Filter;
 import vn.nguyendong.jobhunter.domain.User;
 import vn.nguyendong.jobhunter.domain.dto.ResultPaginationDTO;
 import vn.nguyendong.jobhunter.service.UserService;
+import vn.nguyendong.jobhunter.util.annotation.ApiMessage;
 import vn.nguyendong.jobhunter.util.error.IdInvalidException;
 
 import java.util.List;
@@ -37,6 +38,7 @@ public class UserController {
      * 
      */
     @GetMapping("/users")
+    @ApiMessage("fetch all users")
     public ResponseEntity<ResultPaginationDTO> fetchAllUsers(
             @Filter Specification<User> spec,
             Pageable pageable) {
