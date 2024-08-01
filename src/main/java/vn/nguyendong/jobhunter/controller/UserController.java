@@ -36,6 +36,12 @@ public class UserController {
     /*
      * https://docs.spring.io/spring-data/rest/reference/paging-and-sorting.html
      * 
+     * Trong API phải truyền đúng tên params: page, size, sort thì Pageable mới tự
+     * hiểu được
+     * 
+     * 
+     * Truyền thêm param filter để sử dụng thư viện
+     * https://github.com/turkraft/springfilter
      */
     @GetMapping("/users")
     @ApiMessage("fetch all users")
