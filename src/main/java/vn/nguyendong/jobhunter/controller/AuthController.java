@@ -101,19 +101,22 @@ public class AuthController {
 
         @GetMapping("/auth/account")
         @ApiMessage("fetch account")
-        public ResponseEntity<ResponseLoginDTO.UserLogin> getAccount() {
+        public ResponseEntity<ResponseLoginDTO.UserGetAccount> getAccount() {
                 String email = SecurityUtil.getCurrentUserLogin().isPresent()
                                 ? SecurityUtil.getCurrentUserLogin().get()
                                 : "";
 
                 User currentUserDB = this.userService.handleGetUserByUsername(email);
                 ResponseLoginDTO.UserLogin userLogin = new ResponseLoginDTO.UserLogin();
+                ResponseLoginDTO.UserGetAccount userGetAccount = new ResponseLoginDTO.UserGetAccount();
+
                 if (currentUserDB != null) {
                         userLogin.setId(currentUserDB.getId());
                         userLogin.setEmail(currentUserDB.getEmail());
                         userLogin.setName(currentUserDB.getName());
+                        userGetAccount.setUser(userLogin);
                 }
-                return ResponseEntity.ok().body(userLogin);
+                return ResponseEntity.ok().body(userGetAccount);
         }
 
         @GetMapping("/auth/refresh")

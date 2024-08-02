@@ -39,8 +39,14 @@ public class Company {
      * DateTimeFormatConfiguration đã xác định Instant dùng tiêu chuẩn ISO
      * => Trong database lưu ở GMT+0
      * => khi trả về cho client cần chuyển về GMT+7 (Việt Nam)
+     * 
+     * 
+     * @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7") => format
+     * bên backend
+     * 
+     * => Không có nó thì bên frontend phải tự format
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+    // @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant createdAt;
 
     private Instant updatedAt;
