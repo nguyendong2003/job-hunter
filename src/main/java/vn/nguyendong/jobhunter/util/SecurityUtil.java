@@ -40,7 +40,7 @@ public class SecurityUtil {
     @Value("${nguyendong.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
-    public String createAccessToken(Authentication authentication) {
+    public String createAccessToken(Authentication authentication, ResponseLoginDTO.UserLogin userLogin) {
         // thời gian hiện tại
         Instant now = Instant.now();
         // thời gian hết hạn của token = thời gian hiện tại + thời gian hết hạn
@@ -67,7 +67,7 @@ public class SecurityUtil {
                  * truy cập các resource (tài nguyên)
                  */
                 .subject(authentication.getName())
-                .claim("nguyendong", authentication) // Một claim tùy ý chứa thông tin xác thực
+                .claim("user", userLogin) // tên của key chứa thông tin người dùng là "user" (ở phần payload)
                 .build();
 
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
@@ -83,8 +83,7 @@ public class SecurityUtil {
                 .issuedAt(now)
                 .expiresAt(validity)
                 .subject(email)
-                // tên của key chứa thông tin người dùng là "user" (ở phần payload)
-                .claim("user", res.getUser())
+                .claim("user", res.getUser()) // tên của key chứa thông tin người dùng là "user" (ở phần payload)
                 .build();
 
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
