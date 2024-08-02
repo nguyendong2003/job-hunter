@@ -41,7 +41,8 @@ public class SecurityConfiguration {
     // key được sinh ra dưới định dạng Base64 => cần giải mã key để lấy ra SecretKey
     private SecretKey getSecretKey() {
         byte[] keyBytes = Base64.from(jwtKey).decode();
-        return new SecretKeySpec(keyBytes, 0, keyBytes.length, SecurityUtil.JWT_ALGORITHM.getName());
+        return new SecretKeySpec(keyBytes, 0, keyBytes.length,
+                SecurityUtil.JWT_ALGORITHM.getName());
     }
 
     // khai báo mã hoá JWT như thế nào
@@ -71,20 +72,19 @@ public class SecurityConfiguration {
     }
 
     /*
-     * convert data chứa trong token nạp vào
-     * Spring Security Context để tái sử dụng
+     * - Lấy thông tin từ token và nạp vào phần authorities (quyền hạn)
+     * => phần authorities này sẽ được sử dụng trong hàm filterChain()
+     * 
+     * 
+     * Hàm createAccessToken() trong SecurityUtil.java có key "permission"
+     * => cần phải truyền đúng chính xác tên key "permisssion" vào hàm này để nó có
+     * thể đọc value của key đó và nạp vào authorities
      */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
         grantedAuthoritiesConverter.setAuthorityPrefix("");
-        /*
-         * claimName: tên của claim chứa thông tin về quyền hạn của người dùng
-         * 
-         * claim trong file SecurityUtil.java: .claim("nguyendong", authentication)
-         * => hàm này phải truyền vào "nguyendong"
-         */
-        grantedAuthoritiesConverter.setAuthoritiesClaimName("user");
+        grantedAuthoritiesConverter.setAuthoritiesClaimName("permission");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
@@ -99,7 +99,7 @@ public class SecurityConfiguration {
                 .csrf(c -> c.disable())
                 .cors(Customizer.withDefaults()) // cấu hình cors mặc định
                 .authorizeHttpRequests((authz) -> authz
-                        .requestMatchers("/", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/", "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
                         .anyRequest().authenticated())
 
                 /*

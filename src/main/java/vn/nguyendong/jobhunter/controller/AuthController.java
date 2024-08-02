@@ -8,6 +8,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +23,7 @@ import vn.nguyendong.jobhunter.domain.dto.ResponseLoginDTO;
 import vn.nguyendong.jobhunter.service.UserService;
 import vn.nguyendong.jobhunter.util.SecurityUtil;
 import vn.nguyendong.jobhunter.util.annotation.ApiMessage;
+import vn.nguyendong.jobhunter.util.error.IdInvalidException;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -33,7 +36,8 @@ public class AuthController {
         @Value("${nguyendong.jwt.refresh-token-validity-in-seconds}")
         private long refreshTokenExpiration;
 
-        public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil,
+        public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder,
+                        SecurityUtil securityUtil,
                         UserService userService) {
                 this.authenticationManagerBuilder = authenticationManagerBuilder;
                 this.securityUtil = securityUtil;
@@ -57,7 +61,7 @@ public class AuthController {
                 Authentication authentication = authenticationManagerBuilder.getObject()
                                 .authenticate(authenticationToken);
 
-                // Save data to Security Context
+                // set thông tin người dùng đăng nhập vào Context (có thể sử dụng sau này)
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 // set data to response
@@ -72,7 +76,7 @@ public class AuthController {
                         res.setUser(user);
                 }
                 // create a token
-                String accessToken = this.securityUtil.createAccessToken(authentication, res.getUser());
+                String accessToken = this.securityUtil.createAccessToken(authentication.getName(), res.getUser());
                 res.setAccessToken(accessToken);
 
                 // create refresh token
@@ -82,7 +86,8 @@ public class AuthController {
                 this.userService.updateUserRefreshToken(refreshToken, loginDTO.getUsername());
 
                 // set cookies to client
-                ResponseCookie responseCookie = ResponseCookie.from("refresh_token", refreshToken)
+                ResponseCookie responseCookie = ResponseCookie
+                                .from("refresh_token", refreshToken)
                                 .httpOnly(true)
                                 .secure(true)
                                 .path("/")
@@ -109,5 +114,59 @@ public class AuthController {
                         userLogin.setName(currentUserDB.getName());
                 }
                 return ResponseEntity.ok().body(userLogin);
+        }
+
+        @GetMapping("/auth/refresh")
+        @ApiMessage("get user by refresh token")
+        public ResponseEntity<ResponseLoginDTO> refreshToken(
+                        // get refresh token from cookies
+                        @CookieValue(name = "refresh_token", defaultValue = "abc") String refreshToken)
+                        throws IdInvalidException {
+                if (refreshToken.equals("abc")) {
+                        throw new IdInvalidException("Bạn không có refresh token ở cookie");
+                }
+                // check valid refresh token (trả về một đối tượng Jwt => refresh token hợp lệ)
+                Jwt decodedToken = this.securityUtil.checkValidRefreshToken(refreshToken);
+                String email = decodedToken.getSubject();
+
+                // check user by refresh token + email
+                User currentUser = this.userService.getUserByRefreshTokenAndEmail(refreshToken, email);
+                if (currentUser == null) {
+                        throw new IdInvalidException("Refresh token không hợp lệ");
+                }
+
+                // issue new access token/set refresh token to cookies
+                ResponseLoginDTO res = new ResponseLoginDTO();
+
+                User currentUserDB = this.userService.handleGetUserByUsername(email);
+                if (currentUserDB != null) {
+                        ResponseLoginDTO.UserLogin user = new ResponseLoginDTO.UserLogin(
+                                        currentUserDB.getId(),
+                                        currentUserDB.getEmail(),
+                                        currentUserDB.getName());
+                        res.setUser(user);
+                }
+                // create a token
+                String newAccessToken = this.securityUtil.createAccessToken(email, res.getUser());
+                res.setAccessToken(newAccessToken);
+
+                // create new refresh token
+                String newRefreshToken = this.securityUtil.createRefreshToken(email, res);
+
+                // update refresh token of user
+                this.userService.updateUserRefreshToken(newRefreshToken, email);
+
+                // set cookies to client
+                ResponseCookie responseCookie = ResponseCookie
+                                .from("refresh_token", newRefreshToken)
+                                .httpOnly(true)
+                                .secure(true)
+                                .path("/")
+                                .maxAge(refreshTokenExpiration)
+                                .build();
+
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                                .body(res);
         }
 }

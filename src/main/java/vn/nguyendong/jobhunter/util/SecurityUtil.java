@@ -14,11 +14,20 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
+
+import com.nimbusds.jose.util.Base64;
 
 import vn.nguyendong.jobhunter.domain.dto.ResponseLoginDTO;
 
 import java.util.Optional;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
+import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class SecurityUtil {
@@ -40,11 +49,22 @@ public class SecurityUtil {
     @Value("${nguyendong.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
-    public String createAccessToken(Authentication authentication, ResponseLoginDTO.UserLogin userLogin) {
+    // key được sinh ra dưới định dạng Base64 => cần giải mã key để lấy ra SecretKey
+    private SecretKey getSecretKey() {
+        byte[] keyBytes = Base64.from(jwtKey).decode();
+        return new SecretKeySpec(keyBytes, 0, keyBytes.length, JWT_ALGORITHM.getName());
+    }
+
+    public String createAccessToken(String email, ResponseLoginDTO.UserLogin userLogin) {
         // thời gian hiện tại
         Instant now = Instant.now();
         // thời gian hết hạn của token = thời gian hiện tại + thời gian hết hạn
         Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
+
+        // hardcode permission (for testing)
+        List<String> listAuthority = new ArrayList<>();
+        listAuthority.add("ROLE_USER_CREATE");
+        listAuthority.add("ROLE_USER_UPDATE");
 
         // tạo header cho token
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
@@ -65,9 +85,13 @@ public class SecurityUtil {
                  * 
                  * subject: Chủ thể của JWT, xác định rằng đây là người sở hữu hoặc có quyền
                  * truy cập các resource (tài nguyên)
+                 * 
+                 * 
+                 * có thể thêm bao nhiêu claim cũng được
                  */
-                .subject(authentication.getName())
+                .subject(email)
                 .claim("user", userLogin) // tên của key chứa thông tin người dùng là "user" (ở phần payload)
+                .claim("permission", listAuthority)
                 .build();
 
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
@@ -87,6 +111,23 @@ public class SecurityUtil {
                 .build();
 
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
+    }
+
+    /*
+     * Giải mã refresh token
+     * + Nếu hợp lệ thì trả về một đối tượng Jwt
+     * + Nếu không hợp lệ thì ném ra một Exception
+     */
+    public Jwt checkValidRefreshToken(String refreshToken) {
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(
+                getSecretKey()).macAlgorithm(JWT_ALGORITHM).build();
+
+        try {
+            return jwtDecoder.decode(refreshToken);
+        } catch (Exception e) {
+            System.out.println(">>> Refresh token error: " + e.getMessage());
+            throw e;
+        }
     }
 
     /**
