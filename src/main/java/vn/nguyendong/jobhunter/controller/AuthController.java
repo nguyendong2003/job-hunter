@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import vn.nguyendong.jobhunter.domain.User;
-import vn.nguyendong.jobhunter.domain.dto.LoginDTO;
-import vn.nguyendong.jobhunter.domain.dto.ResponseLoginDTO;
+import vn.nguyendong.jobhunter.domain.request.RequestLoginDTO;
+import vn.nguyendong.jobhunter.domain.response.ResponseLoginDTO;
 import vn.nguyendong.jobhunter.service.UserService;
 import vn.nguyendong.jobhunter.util.SecurityUtil;
 import vn.nguyendong.jobhunter.util.annotation.ApiMessage;
@@ -52,7 +52,7 @@ public class AuthController {
          * GlobalException.java để giải quyết nó
          */
         @PostMapping("/auth/login")
-        public ResponseEntity<ResponseLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
+        public ResponseEntity<ResponseLoginDTO> login(@Valid @RequestBody RequestLoginDTO loginDTO) {
                 // Nạp input gồm username/password vào Security
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                                 loginDTO.getUsername(), loginDTO.getPassword());

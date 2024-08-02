@@ -1,4 +1,4 @@
-package vn.nguyendong.jobhunter.domain;
+package vn.nguyendong.jobhunter.domain.response;
 
 public class RestResponse<T> {
     private int statusCode;

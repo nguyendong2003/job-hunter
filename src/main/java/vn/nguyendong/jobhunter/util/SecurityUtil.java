@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 
 import com.nimbusds.jose.util.Base64;
 
-import vn.nguyendong.jobhunter.domain.dto.ResponseLoginDTO;
+import vn.nguyendong.jobhunter.domain.response.ResponseLoginDTO;
 
 import java.util.Optional;
 
