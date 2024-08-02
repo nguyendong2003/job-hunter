@@ -1,5 +1,8 @@
 package vn.nguyendong.jobhunter.controller;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -14,7 +17,6 @@ import jakarta.validation.Valid;
 import vn.nguyendong.jobhunter.domain.User;
 import vn.nguyendong.jobhunter.domain.dto.LoginDTO;
 import vn.nguyendong.jobhunter.domain.dto.ResponseLoginDTO;
-import vn.nguyendong.jobhunter.domain.dto.ResponseLoginDTO.UserLogin;
 import vn.nguyendong.jobhunter.service.UserService;
 import vn.nguyendong.jobhunter.util.SecurityUtil;
 
@@ -25,6 +27,9 @@ public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
     private final UserService userService;
+
+    @Value("${nguyendong.jwt.refresh-token-validity-in-seconds}")
+    private long refreshTokenExpiration;
 
     public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil,
             UserService userService) {
@@ -50,7 +55,7 @@ public class AuthController {
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
         // create a token
-        String accessToken = this.securityUtil.createToken(authentication);
+        String accessToken = this.securityUtil.createAccessToken(authentication);
 
         // Save data to Security Context
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -67,8 +72,22 @@ public class AuthController {
                     currentUserDB.getName());
             res.setUser(user);
         }
+        // create refresh token
+        String refreshToken = this.securityUtil.createRefreshToken(loginDTO.getUsername(), res);
 
-        //
-        return ResponseEntity.ok().body(res);
+        // update refresh token of user
+        this.userService.updateUserRefreshToken(refreshToken, loginDTO.getUsername());
+
+        // set cookies to client
+        ResponseCookie responseCookie = ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(refreshTokenExpiration)
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .body(res);
     }
 }

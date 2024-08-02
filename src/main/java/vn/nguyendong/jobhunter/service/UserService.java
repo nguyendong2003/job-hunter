@@ -132,4 +132,16 @@ public class UserService {
         res.setUpdatedAt(user.getUpdatedAt());
         return res;
     }
+
+    /*
+     * function to update refresh token of user
+     */
+
+    public void updateUserRefreshToken(String token, String email) {
+        User currentUser = this.handleGetUserByUsername(email);
+        if (currentUser != null) {
+            currentUser.setRefreshToken(token);
+            this.userRepository.save(currentUser);
+        }
+    }
 }

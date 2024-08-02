@@ -16,6 +16,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
+import vn.nguyendong.jobhunter.domain.dto.ResponseLoginDTO;
+
 import java.util.Optional;
 
 @Service
@@ -32,14 +34,17 @@ public class SecurityUtil {
     @Value("${nguyendong.jwt.base64-secret}")
     private String jwtKey;
 
-    @Value("${nguyendong.jwt.token-validity-in-seconds}")
-    private long jwtKeyExpiration;
+    @Value("${nguyendong.jwt.access-token-validity-in-seconds}")
+    private long accessTokenExpiration;
 
-    public String createToken(Authentication authentication) {
+    @Value("${nguyendong.jwt.refresh-token-validity-in-seconds}")
+    private long refreshTokenExpiration;
+
+    public String createAccessToken(Authentication authentication) {
         // thời gian hiện tại
         Instant now = Instant.now();
         // thời gian hết hạn của token = thời gian hiện tại + thời gian hết hạn
-        Instant validity = now.plus(this.jwtKeyExpiration, ChronoUnit.SECONDS);
+        Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
 
         // tạo header cho token
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
@@ -54,12 +59,35 @@ public class SecurityUtil {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now) // Thời gian phát hành token
                 .expiresAt(validity) // Thời gian hết hạn của token
-                .subject(authentication.getName()) // Chủ thể của token (tên người dùng)
+
+                /*
+                 * authentication.getName() trả ra email
+                 * 
+                 * subject: Chủ thể của JWT, xác định rằng đây là người sở hữu hoặc có quyền
+                 * truy cập các resource (tài nguyên)
+                 */
+                .subject(authentication.getName())
                 .claim("nguyendong", authentication) // Một claim tùy ý chứa thông tin xác thực
                 .build();
 
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
+    }
 
+    public String createRefreshToken(String email, ResponseLoginDTO res) {
+        Instant now = Instant.now();
+        Instant validity = now.plus(this.refreshTokenExpiration, ChronoUnit.SECONDS);
+
+        JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuedAt(now)
+                .expiresAt(validity)
+                .subject(email)
+                // tên của key chứa thông tin người dùng là "user" (ở phần payload)
+                .claim("user", res.getUser())
+                .build();
+
+        return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
     }
 
     /**
