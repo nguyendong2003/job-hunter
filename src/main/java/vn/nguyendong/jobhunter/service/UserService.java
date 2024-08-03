@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import vn.nguyendong.jobhunter.domain.Company;
 import vn.nguyendong.jobhunter.domain.User;
 import vn.nguyendong.jobhunter.domain.response.ResponseCreateUserDTO;
 import vn.nguyendong.jobhunter.domain.response.ResponseUpdateUserDTO;
@@ -19,9 +20,11 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final CompanyService companyService;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, CompanyService companyService) {
         this.userRepository = userRepository;
+        this.companyService = companyService;
     }
 
     public ResultPaginationDTO fetchUsers(Specification<User> spec, Pageable pageable) {
@@ -36,7 +39,6 @@ public class UserService {
         mt.setTotal(pageUser.getTotalElements());
 
         rs.setMeta(mt);
-        rs.setResult(pageUser.getContent());
 
         // remove sensitive data
         // data trả về không chứa thông tin mật khẩu, refresh token của người dùng)
@@ -49,7 +51,10 @@ public class UserService {
                         item.getAddress(),
                         item.getAge(),
                         item.getUpdatedAt(),
-                        item.getCreatedAt()))
+                        item.getCreatedAt(),
+                        new ResponseUserDTO.CompanyUser(
+                                item.getCompany() != null ? item.getCompany().getId() : 0,
+                                item.getCompany() != null ? item.getCompany().getName() : null)))
                 .collect(Collectors.toList());
 
         rs.setResult(listUser);
@@ -71,7 +76,19 @@ public class UserService {
     }
 
     public User handleCreateUser(User user) {
+
+        /*
+         * check company (nếu có truyền id company thì lấy ra company đó, nếu tồn tại
+         * company thì set company cho user, nếu không truyền hoặc truyền sai thì set
+         * company = null)
+         */
+        if (user.getCompany() != null) {
+            Optional<Company> companyOptional = this.companyService.findById(user.getCompany().getId());
+            user.setCompany(companyOptional.isPresent() ? companyOptional.get() : null);
+        }
+
         return this.userRepository.save(user);
+
     }
 
     public User handleUpdateUser(User user) {
@@ -82,7 +99,15 @@ public class UserService {
             currentUser.setAge(user.getAge());
             currentUser.setName(user.getName());
 
+            // check company (tương tự như create user)
+            if (user.getCompany() != null) {
+                Optional<Company> companyOptional = this.companyService.findById(user.getCompany().getId());
+                currentUser.setCompany(companyOptional.isPresent() ? companyOptional.get() : null);
+            }
+
+            // update
             currentUser = this.userRepository.save(currentUser);
+
         }
         return currentUser;
     }
@@ -97,6 +122,8 @@ public class UserService {
 
     public ResponseCreateUserDTO convertToResponseCreateUserDTO(User user) {
         ResponseCreateUserDTO res = new ResponseCreateUserDTO();
+        ResponseCreateUserDTO.CompanyUser company = new ResponseCreateUserDTO.CompanyUser();
+
         res.setId(user.getId());
         res.setName(user.getName());
         res.setEmail(user.getEmail());
@@ -104,23 +131,41 @@ public class UserService {
         res.setAddress(user.getAddress());
         res.setAge(user.getAge());
         res.setCreatedAt(user.getCreatedAt());
+
+        if (user.getCompany() != null) {
+            company.setId(user.getCompany().getId());
+            company.setName(user.getCompany().getName());
+            res.setCompany(company);
+        }
+
         return res;
     }
 
     public ResponseUpdateUserDTO convertToResponseUpdateUserDTO(User user) {
         ResponseUpdateUserDTO res = new ResponseUpdateUserDTO();
+        ResponseUpdateUserDTO.CompanyUser company = new ResponseUpdateUserDTO.CompanyUser();
+
         res.setId(user.getId());
         res.setName(user.getName());
         res.setGender(user.getGender());
         res.setAddress(user.getAddress());
         res.setAge(user.getAge());
         res.setUpdatedAt(user.getUpdatedAt());
+
+        if (user.getCompany() != null) {
+            company.setId(user.getCompany().getId());
+            company.setName(user.getCompany().getName());
+            res.setCompany(company);
+        }
+
         return res;
 
     }
 
     public ResponseUserDTO convertToResponseUserDTO(User user) {
         ResponseUserDTO res = new ResponseUserDTO();
+        ResponseUserDTO.CompanyUser company = new ResponseUserDTO.CompanyUser();
+
         res.setId(user.getId());
         res.setEmail(user.getEmail());
         res.setName(user.getName());
@@ -129,6 +174,13 @@ public class UserService {
         res.setAge(user.getAge());
         res.setCreatedAt(user.getCreatedAt());
         res.setUpdatedAt(user.getUpdatedAt());
+
+        if (user.getCompany() != null) {
+            company.setId(user.getCompany().getId());
+            company.setName(user.getCompany().getName());
+            res.setCompany(company);
+        }
+
         return res;
     }
 

@@ -2,9 +2,11 @@ package vn.nguyendong.jobhunter.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -14,8 +16,9 @@ import lombok.Setter;
 import vn.nguyendong.jobhunter.util.SecurityUtil;
 
 import java.time.Instant;
+import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Table(name = "companies")
 @Entity
@@ -52,6 +55,11 @@ public class Company {
     private Instant updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
+    @JsonIgnore // Anotation này giúp tránh lỗi vòng lặp vô hạn khi get companies (khi query
+                // Company thì không query users)
+    private List<User> users;
 
     @PrePersist
     public void handleBeforeCreate() {
