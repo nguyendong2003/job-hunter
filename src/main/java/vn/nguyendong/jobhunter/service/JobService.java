@@ -9,11 +9,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import vn.nguyendong.jobhunter.domain.Company;
 import vn.nguyendong.jobhunter.domain.Job;
 import vn.nguyendong.jobhunter.domain.Skill;
 import vn.nguyendong.jobhunter.domain.response.ResultPaginationDTO;
 import vn.nguyendong.jobhunter.domain.response.job.ResponseCreateJobDTO;
 import vn.nguyendong.jobhunter.domain.response.job.ResponseUpdateJobDTO;
+import vn.nguyendong.jobhunter.repository.CompanyRepository;
 import vn.nguyendong.jobhunter.repository.JobRepository;
 import vn.nguyendong.jobhunter.repository.SkillRepository;
 
@@ -22,11 +24,13 @@ public class JobService {
 
     private final JobRepository jobRepository;
     private final SkillRepository skillRepository;
+    private final CompanyRepository companyRepository;
 
     public JobService(JobRepository jobRepository,
-            SkillRepository skillRepository) {
+            SkillRepository skillRepository, CompanyRepository companyRepository) {
         this.jobRepository = jobRepository;
         this.skillRepository = skillRepository;
+        this.companyRepository = companyRepository;
     }
 
     public Optional<Job> fetchJobById(long id) {
@@ -71,7 +75,12 @@ public class JobService {
         return dto;
     }
 
+    /*
+     * Viết kiểu này để tránh trường hợp client gửi không đủ các trường thông tin
+     * của Job
+     */
     public ResponseUpdateJobDTO update(Job j) {
+        Job jobInDB = this.jobRepository.findById(j.getId()).get();
         // check skills
         if (j.getSkills() != null) {
             List<Long> reqSkills = j.getSkills()
@@ -79,11 +88,29 @@ public class JobService {
                     .collect(Collectors.toList());
 
             List<Skill> dbSkills = this.skillRepository.findByIdIn(reqSkills);
-            j.setSkills(dbSkills);
+            jobInDB.setSkills(dbSkills);
         }
 
+        // check company
+        if (j.getCompany() != null) {
+            Optional<Company> cOptional = this.companyRepository.findById(j.getCompany().getId());
+            if (cOptional.isPresent()) {
+                jobInDB.setCompany(cOptional.get());
+            }
+        }
+
+        // update correct info
+        jobInDB.setName(j.getName());
+        jobInDB.setSalary(j.getSalary());
+        jobInDB.setQuantity(j.getQuantity());
+        jobInDB.setLocation(j.getLocation());
+        jobInDB.setLevel(j.getLevel());
+        jobInDB.setStartDate(j.getStartDate());
+        jobInDB.setEndDate(j.getEndDate());
+        jobInDB.setActive(j.isActive());
+
         // update job
-        Job currentJob = this.jobRepository.save(j);
+        Job currentJob = this.jobRepository.save(jobInDB);
 
         // convert response
         ResponseUpdateJobDTO dto = new ResponseUpdateJobDTO();
