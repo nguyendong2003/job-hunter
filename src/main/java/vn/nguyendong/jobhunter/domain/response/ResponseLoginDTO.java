@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import vn.nguyendong.jobhunter.domain.Role;
 
 @Getter
 @Setter
@@ -24,6 +25,7 @@ public class ResponseLoginDTO {
         private long id;
         private String email;
         private String name;
+        private Role role;
     }
 
     // class này để khi http://localhost:8080/api/v1/auth/account thì có key "user"
@@ -34,6 +36,16 @@ public class ResponseLoginDTO {
     @NoArgsConstructor
     public static class UserGetAccount {
         private UserLogin user;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UserInsideToken {
+        private long id;
+        private String email;
+        private String name;
     }
 
 }

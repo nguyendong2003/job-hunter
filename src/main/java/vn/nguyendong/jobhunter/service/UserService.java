@@ -6,6 +6,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import vn.nguyendong.jobhunter.domain.Company;
+import vn.nguyendong.jobhunter.domain.Role;
 import vn.nguyendong.jobhunter.domain.User;
 import vn.nguyendong.jobhunter.domain.response.ResponseCreateUserDTO;
 import vn.nguyendong.jobhunter.domain.response.ResponseUpdateUserDTO;
@@ -21,10 +22,12 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
     private final CompanyService companyService;
+    private final RoleService roleService;
 
-    public UserService(UserRepository userRepository, CompanyService companyService) {
+    public UserService(UserRepository userRepository, CompanyService companyService, RoleService roleService) {
         this.userRepository = userRepository;
         this.companyService = companyService;
+        this.roleService = roleService;
     }
 
     public ResultPaginationDTO fetchUsers(Specification<User> spec, Pageable pageable) {
@@ -43,18 +46,7 @@ public class UserService {
         // remove sensitive data
         // data trả về không chứa thông tin mật khẩu, refresh token của người dùng)
         List<ResponseUserDTO> listUser = pageUser.getContent()
-                .stream().map(item -> new ResponseUserDTO(
-                        item.getId(),
-                        item.getEmail(),
-                        item.getName(),
-                        item.getGender(),
-                        item.getAddress(),
-                        item.getAge(),
-                        item.getUpdatedAt(),
-                        item.getCreatedAt(),
-                        new ResponseUserDTO.CompanyUser(
-                                item.getCompany() != null ? item.getCompany().getId() : 0,
-                                item.getCompany() != null ? item.getCompany().getName() : null)))
+                .stream().map(item -> this.convertToResponseUserDTO(item))
                 .collect(Collectors.toList());
 
         rs.setResult(listUser);
@@ -75,6 +67,10 @@ public class UserService {
         return this.userRepository.findByEmail(username);
     }
 
+    public boolean isEmailExist(String email) {
+        return this.userRepository.existsByEmail(email);
+    }
+
     public User handleCreateUser(User user) {
 
         /*
@@ -85,6 +81,13 @@ public class UserService {
         if (user.getCompany() != null) {
             Optional<Company> companyOptional = this.companyService.findById(user.getCompany().getId());
             user.setCompany(companyOptional.isPresent() ? companyOptional.get() : null);
+        }
+
+        // check role (kiểm tra role có tồn tại không, nếu có thì set role cho user, nếu
+        // không thì set role = null)
+        if (user.getRole() != null) {
+            Role r = this.roleService.fetchById(user.getRole().getId());
+            user.setRole(r != null ? r : null);
         }
 
         return this.userRepository.save(user);
@@ -103,6 +106,12 @@ public class UserService {
             if (user.getCompany() != null) {
                 Optional<Company> companyOptional = this.companyService.findById(user.getCompany().getId());
                 currentUser.setCompany(companyOptional.isPresent() ? companyOptional.get() : null);
+            }
+
+            // check role
+            if (user.getRole() != null) {
+                Role r = this.roleService.fetchById(user.getRole().getId());
+                currentUser.setRole(r != null ? r : null);
             }
 
             // update
@@ -165,6 +174,7 @@ public class UserService {
     public ResponseUserDTO convertToResponseUserDTO(User user) {
         ResponseUserDTO res = new ResponseUserDTO();
         ResponseUserDTO.CompanyUser company = new ResponseUserDTO.CompanyUser();
+        ResponseUserDTO.RoleUser roleUser = new ResponseUserDTO.RoleUser();
 
         res.setId(user.getId());
         res.setEmail(user.getEmail());
@@ -179,6 +189,12 @@ public class UserService {
             company.setId(user.getCompany().getId());
             company.setName(user.getCompany().getName());
             res.setCompany(company);
+        }
+
+        if (user.getRole() != null) {
+            roleUser.setId(user.getRole().getId());
+            roleUser.setName(user.getRole().getName());
+            res.setRole(roleUser);
         }
 
         return res;

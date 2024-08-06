@@ -55,7 +55,12 @@ public class SecurityUtil {
         return new SecretKeySpec(keyBytes, 0, keyBytes.length, JWT_ALGORITHM.getName());
     }
 
-    public String createAccessToken(String email, ResponseLoginDTO.UserLogin userLogin) {
+    public String createAccessToken(String email, ResponseLoginDTO dto) {
+        ResponseLoginDTO.UserInsideToken userToken = new ResponseLoginDTO.UserInsideToken();
+        userToken.setId(dto.getUser().getId());
+        userToken.setEmail(dto.getUser().getEmail());
+        userToken.setName(dto.getUser().getName());
+
         // thời gian hiện tại
         Instant now = Instant.now();
         // thời gian hết hạn của token = thời gian hiện tại + thời gian hết hạn
@@ -90,14 +95,20 @@ public class SecurityUtil {
                  * có thể thêm bao nhiêu claim cũng được
                  */
                 .subject(email)
-                .claim("user", userLogin) // tên của key chứa thông tin người dùng là "user" (ở phần payload)
+                .claim("user", userToken) // tên của key chứa thông tin người dùng là "user" (ở phần payload)
                 .claim("permission", listAuthority)
                 .build();
 
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
     }
 
-    public String createRefreshToken(String email, ResponseLoginDTO res) {
+    public String createRefreshToken(String email, ResponseLoginDTO dto) {
+        ResponseLoginDTO.UserInsideToken userToken = new ResponseLoginDTO.UserInsideToken();
+        userToken.setId(dto.getUser().getId());
+        userToken.setEmail(dto.getUser().getEmail());
+        userToken.setName(dto.getUser().getName());
+
+        //
         Instant now = Instant.now();
         Instant validity = now.plus(this.refreshTokenExpiration, ChronoUnit.SECONDS);
 
@@ -107,7 +118,7 @@ public class SecurityUtil {
                 .issuedAt(now)
                 .expiresAt(validity)
                 .subject(email)
-                .claim("user", res.getUser()) // tên của key chứa thông tin người dùng là "user" (ở phần payload)
+                .claim("user", userToken) // tên của key chứa thông tin người dùng là "user" (ở phần payload)
                 .build();
 
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();

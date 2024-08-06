@@ -26,8 +26,6 @@ import vn.nguyendong.jobhunter.service.UserService;
 import vn.nguyendong.jobhunter.util.annotation.ApiMessage;
 import vn.nguyendong.jobhunter.util.error.IdInvalidException;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1")
 public class UserController {
