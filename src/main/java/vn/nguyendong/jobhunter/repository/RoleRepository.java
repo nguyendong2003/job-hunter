@@ -9,4 +9,6 @@ import vn.nguyendong.jobhunter.domain.Role;
 public interface RoleRepository extends JpaRepository<Role, Long>,
         JpaSpecificationExecutor<Role> {
     boolean existsByName(String name);
+
+    Role findByName(String name);
 }
