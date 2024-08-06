@@ -6,6 +6,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -98,9 +99,8 @@ public class SecurityConfiguration {
 
         String[] whiteList = {
                 "/",
-                "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh",
+                "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/register",
                 "/storage/**",
-                "/api/v1/companies/**", "/api/v1/jobs/**"
         };
 
         http
@@ -108,6 +108,10 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults()) // cấu hình cors mặc định
                 .authorizeHttpRequests((authz) -> authz
                         .requestMatchers(whiteList).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/companies").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/jobs").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/skills").permitAll()
+
                         .anyRequest().authenticated())
 
                 /*
