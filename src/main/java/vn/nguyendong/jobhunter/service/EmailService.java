@@ -7,6 +7,7 @@ import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -68,6 +69,23 @@ public class EmailService {
         String name = "Nguyễn Đông";
         context.setVariable("name", name);
         context.setVariable("jobs", arrJob);
+
+        String content = templateEngine.process(templateName, context);
+        this.sendEmailSync(to, subject, content, false, true);
+    }
+
+    // @Async để gửi email không ảnh hưởng đến việc chạy các hàm khác
+    @Async
+    public void sendEmailFromTemplateSync(
+            String to,
+            String subject,
+            String templateName,
+            String username,
+            Object value) {
+
+        Context context = new Context();
+        context.setVariable("name", username);
+        context.setVariable("jobs", value);
 
         String content = templateEngine.process(templateName, context);
         this.sendEmailSync(to, subject, content, false, true);

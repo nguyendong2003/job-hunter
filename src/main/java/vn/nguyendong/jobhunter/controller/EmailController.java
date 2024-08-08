@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import vn.nguyendong.jobhunter.service.EmailService;
+import vn.nguyendong.jobhunter.service.SubscriberService;
 import vn.nguyendong.jobhunter.util.annotation.ApiMessage;
 
 @RestController
@@ -12,14 +13,14 @@ import vn.nguyendong.jobhunter.util.annotation.ApiMessage;
 public class EmailController {
 
     private final EmailService emailService;
+    private final SubscriberService subscriberService;
 
-    public EmailController(EmailService emailService) {
+    public EmailController(EmailService emailService, SubscriberService subscriberService) {
         this.emailService = emailService;
+        this.subscriberService = subscriberService;
     }
 
     /*
-     * 
-     * 
      * tạo file job.html trong src/main/resources/templates
      * => Hàm sendEmailFromTemplateSync cần truyền vào file job.html
      * => Truyền test ở biến templateName
@@ -29,10 +30,14 @@ public class EmailController {
     @ApiMessage("Send simple email")
     public String sendSimpleEmail() {
         // this.emailService.sendSimpleEmail();
+
         // this.emailService.sendEmailSync("dongcoi14122003@gmail.com", "test send
         // email", "<h1><b>hello</b></h1>", false,
         // true);
-        this.emailService.sendEmailFromTemplateSync("dongcoi14122003@gmail.com", "test send email", "job");
+
+        // this.emailService.sendEmailFromTemplateSync("dongcoi14122003@gmail.com",
+        // "test send email", "job");
+        this.subscriberService.sendSubscribersEmailJobs();
         return "ok";
     }
 }
