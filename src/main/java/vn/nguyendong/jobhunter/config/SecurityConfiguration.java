@@ -101,7 +101,12 @@ public class SecurityConfiguration {
                 "/",
                 "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/register",
                 "/storage/**",
-                "/api/v1/email/**"
+                "/api/v1/email/**",
+                // config access swagger
+                "/v3/api-docs/**",
+                "/swagger-ui/**",
+                "/swagger-ui.html"
+                //
         };
 
         http
